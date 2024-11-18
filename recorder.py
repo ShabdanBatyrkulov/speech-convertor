@@ -1,69 +1,79 @@
 import torch
 import time
+import asyncio
+import sounddevice as sd
+import numpy as np
+
 from queue import Queue
 from threading import Thread
-from sounddevice import InputStream
+
+
+async def record_buffer(buffer, sample_rate, **kwargs):
+  loop = asyncio.get_event_loop()
+  event = asyncio.Event()
+  idx = 0
+
+  def callback(indata, frame_count, time_info, status):
+    nonlocal idx
+    if status:
+      print(status)
+    remainder = len(buffer) - idx
+    if remainder == 0:
+      loop.call_soon_threadsafe(event.set)
+      raise sd.CallbackStop
+    indata = indata[:remainder]
+    buffer[idx:idx + len(indata)] = indata
+    idx += len(indata)
+
+  stream = sd.InputStream(samplerate=sample_rate, callback=callback, dtype=buffer.dtype,
+                          channels=buffer.shape[1], **kwargs)
+  with stream:
+    await event.wait()
+
+
+async def play_buffer(buffer, sample_rate, **kwargs):
+  loop = asyncio.get_event_loop()
+  event = asyncio.Event()
+  idx = 0
+
+  def callback(outdata, frame_count, time_info, status):
+    nonlocal idx
+    if status:
+      print(status)
+    remainder = len(buffer) - idx
+    if remainder == 0:
+      loop.call_soon_threadsafe(event.set)
+      raise sd.CallbackStop
+    valid_frames = frame_count if remainder >= frame_count else remainder
+    outdata[:valid_frames] = buffer[idx:idx + valid_frames]
+    outdata[valid_frames:] = 0
+    idx += valid_frames
+
+  stream = sd.OutputStream(samplerate=sample_rate, callback=callback, dtype=buffer.dtype,
+                           channels=buffer.shape[1], **kwargs)
+  with stream:
+    await event.wait()
 
 
 class Recorder:
   def __init__(
       self,
-      sample_rate: int,
-      segment_length: int,
-      context_length: int,
-      VAD=None
+      sample_rate: int
   ):
-    self.messages = Queue()
-    self.recordings = Queue()
-    self.cache = ContextCacher(segment_length, context_length)
     self.sample_rate = sample_rate
-    self.segment_length = segment_length
-    self.VAD = VAD
 
-  def record(self):
-    stream = InputStream(
-        self.sample_rate,
-        self.segment_length,
-        channels=1,
-        callback=lambda x, *_: self.recordings.put(
-            torch.from_numpy(x).squeeze()
-        ),
-    )
-    with stream:
-      while not self.messages.empty():
-        time.sleep(self.segment_length / self.sample_rate)
-
-  def __call__(self):
+  async def __call__(self):
     print('Starting...')
-    self.messages.put(True)
-    record = Thread(target=self.record)
-    record.start()
-    while not self.messages.empty():
-      chunk = self.recordings.get()
-      if self.VAD:
-        y = self.VAD(chunk)
-        threshold = self.VAD.apply_threshold(y, 0.7, 0.3)
-        silence = torch.sum(threshold) < threshold.size(1) / 4
-        if silence:
-          continue
-      segment = self.cache(chunk)
-      yield segment
+    # self.messages.put(True)
 
-  def stop(self):
-    self.messages.get()
-    print('Stopped.')
+    buffer = np.empty((150_000, 1), dtype='float32')
+    print("LOG_INFO:", "Start recording for ~10 seconds.\nPlease say something.")
+    await record_buffer(buffer, self.sample_rate)
+    print("LOG_INFO:", "Finished recording")
 
+    print("LOG_INFO:", "Playing recording")
+    await play_buffer(buffer, self.sample_rate)
+    print("LOG_INFO:", "Finished playing recording")
 
-class ContextCacher:
-  def __init__(self, segment_length: int, context_length: int):
-    self.segment_length = segment_length
-    self.context_length = context_length
-    self.context = torch.zeros([context_length])
-
-  def __call__(self, chunk: torch.Tensor):
-    if chunk.size(0) < self.segment_length:
-      pad = 0, self.segment_length - chunk.size(0)
-      chunk = torch.nn.functional.pad(chunk, pad)
-    chunk_with_context = torch.cat((self.context, chunk))
-    self.context = chunk_with_context[-self.context_length:]
-    return chunk_with_context
+    chunk = torch.from_numpy(buffer).squeeze()
+    return chunk

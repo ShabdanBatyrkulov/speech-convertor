@@ -1,4 +1,3 @@
-
 import torch
 import torch.nn as nn
 from .attention import MultiHeadAttention
@@ -113,8 +112,8 @@ class Decoder(nn.Module):
     self.mask = torch.full([seq_length, seq_length], float('-inf')).triu(1)
     self.embedding = Embedding(d_model, seq_length, dropout)
     self.layers = SequentialDecoder(*(
-        DecoderBlock(d_model, d_hidden, n_heads, dropout)
-        for _ in range(n_layers)
+      DecoderBlock(d_model, d_hidden, n_heads, dropout)
+      for _ in range(n_layers)
     ))
 
   def forward(self, x: torch.Tensor, y: str | torch.Tensor):

@@ -23,15 +23,15 @@ class SequenceToSequenceModel(Module, ABC):
     p, m = (path if filepath else self.name for path in (p, m))
     pretrained_cache = 'pretrained_models'
     self.processor = self.processor.from_pretrained(
-        p,
-        cache_dir=p if filepath else pretrained_cache
+      p,
+      cache_dir=p if filepath else pretrained_cache
     )
     self.model = self.model.from_pretrained(
-        m,
-        cache_dir=m if filepath else pretrained_cache,
-        use_safetensors=True,
-        output_hidden_states=True,
-        return_dict_in_generate=True
+      m,
+      cache_dir=m if filepath else pretrained_cache,
+      use_safetensors=True,
+      output_hidden_states=True,
+      return_dict_in_generate=True
     ).to(self.device)
 
   def save(self, path):
@@ -40,8 +40,8 @@ class SequenceToSequenceModel(Module, ABC):
 
   def process_model_output(self, output: ModelOutput):
     decoded_output = self.processor.decode(
-        output.sequences[0],
-        skip_special_tokens=True
+      output.sequences[0],
+      skip_special_tokens=True
     )
     encoder_out, decoder_out = (output[f'{module}_hidden_states'][-1]
                                 for module in ('encoder', 'decoder'))

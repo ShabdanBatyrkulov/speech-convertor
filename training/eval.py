@@ -31,10 +31,10 @@ class Metrics:
       bleu.counts[i] += 1
       bleu.totals[i] += 1
     bleu = BLEU.compute_bleu(
-        bleu.counts,
-        bleu.totals,
-        bleu.sys_len,
-        bleu.ref_len,
-        smooth_method="exp"
+      bleu.counts,
+      bleu.totals,
+      bleu.sys_len,
+      bleu.ref_len,
+      smooth_method="exp"
     )
     return bleu.score

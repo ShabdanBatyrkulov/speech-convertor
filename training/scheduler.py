@@ -14,8 +14,8 @@ class Sequential:
       verbose=False
   ):
     self.schedulers, self.milestones = (
-        x if isinstance(x, (list, tuple))
-        else (x,) for x in (schedulers, milestones)
+      x if isinstance(x, (list, tuple))
+      else (x,) for x in (schedulers, milestones)
     )
     self.verbose = verbose
     self.running_lr = []
@@ -37,8 +37,8 @@ class Sequential:
     self.current_step += 1
 
     guard = self.i < len(self.milestones)
-    if guard and self.current_step ==\
-            self.milestones[self.i] + sum(self.milestones[:self.i]):
+    if guard and self.current_step == \
+        self.milestones[self.i] + sum(self.milestones[:self.i]):
       self.i += 1
       if self.verbose:
         name = self.schedulers[self.i].__class__.__name__
@@ -78,8 +78,8 @@ class SWA:
 
   def state_dict(self):
     state_dict = {
-        'model': self.averaged_model.state_dict(),
-        'scheduler': self.scheduler.state_dict()
+      'model': self.averaged_model.state_dict(),
+      'scheduler': self.scheduler.state_dict()
     }
     return state_dict
 

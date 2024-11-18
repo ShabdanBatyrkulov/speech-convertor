@@ -34,12 +34,12 @@ class MuSTC(Dataset):
         offset = int(float(segment['offset']) * sample_rate)
         n_frames = int(float(segment['duration']) * sample_rate)
         self.data.append((
-            wav_path.as_posix(),
-            offset,
-            n_frames,
-            sample_rate,
-            segment['en'],
-            segment['ru'],
+          wav_path.as_posix(),
+          offset,
+          n_frames,
+          sample_rate,
+          segment['en'],
+          segment['ru'],
         ))
       self.audio_processor = audio_processor
       self.tokenizer = tokenizer
@@ -47,12 +47,12 @@ class MuSTC(Dataset):
   def __getitem__(self, n: int):
     wav_path, offset, n_frames, sample_rate, src, tgt = self.data[n]
     waveform, _ = sf.read(
-        wav_path,
-        dtype='float32',
-        samplerate=sample_rate,
-        always_2d=True,
-        frames=n_frames,
-        start=offset
+      wav_path,
+      dtype='float32',
+      samplerate=sample_rate,
+      always_2d=True,
+      frames=n_frames,
+      start=offset
     )
     waveform = torch.from_numpy(waveform.T)
     src, tgt = (self.tokenizer(x) for x in (src, tgt))

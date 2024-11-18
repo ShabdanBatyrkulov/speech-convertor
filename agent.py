@@ -23,7 +23,7 @@ class WaitK(SpeechToTextAgent):
     if states is None:
       states = self.states
       length_in_seconds = float(len(states.source)) / states.source_sample_rate \
-          if states.source_sample_rate != 0 else 0
+        if states.source_sample_rate != 0 else 0
     if not states.source_finished:
       if length_in_seconds * 1e3 / self.segment_length < self.k:
         return ReadAction()
@@ -35,6 +35,6 @@ class WaitK(SpeechToTextAgent):
       prediction = prediction[: self.continuous]
 
     return WriteAction(
-        content=' '.join(prediction),
-        finished=states.source_finished,
+      content=' '.join(prediction),
+      finished=states.source_finished,
     )

@@ -34,7 +34,7 @@ class CTCWassersteinLoss(Module):
     self.eos_idx = eos_idx
     if ot_position_weight > 0.0:
       self.ot_position_weight = torch.nn.Parameter(
-          torch.Temsor([ot_position_weight]))
+        torch.Temsor([ot_position_weight]))
     self.attn_weight_text = attn_weight_text
     self.attn_weight_speech = attn_weight_speech
     self.gamma = gamma
@@ -70,9 +70,9 @@ class CTCWassersteinLoss(Module):
   def ctc(self, pred: torch.Tensor, target: torch.Tensor):
     lprobs = F.log_softmax(pred, dim=-1).contiguous()
     input_lengths = lprobs.new_full(
-        (lprobs.size(1),),
-        lprobs.size(0),
-        dtype=torch.long
+      (lprobs.size(1),),
+      lprobs.size(0),
+      dtype=torch.long
     )
 
     pad_mask = target not in (self.pad_idx, self.eos_idx)
@@ -81,59 +81,59 @@ class CTCWassersteinLoss(Module):
 
     with torch.backends.cudnn.flags(enabled=False):
       ctc_loss = F.ctc_loss(
-          lprobs,
-          targets_flat,
-          input_lengths,
-          target_lengths,
-          reduction="sum",
-          zero_infinity=True,
+        lprobs,
+        targets_flat,
+        input_lengths,
+        target_lengths,
+        reduction="sum",
+        zero_infinity=True,
       )
     kl_loss = 0.0
     if self.gamma > 0:
       kl_loss = F.kl_div(
-          lprobs.transpose(0, 1),
-          torch.full_like(lprobs.transpose(0, 1),
-                          1 / (lprobs.size(-1) - 1)),
-          reduction="batchmean",
+        lprobs.transpose(0, 1),
+        torch.full_like(lprobs.transpose(0, 1),
+                        1 / (lprobs.size(-1) - 1)),
+        reduction="batchmean",
       )
     return (1. - self.gamma) * ctc_loss + self.gamma * kl_loss
 
   def ot(self, speech_out: torch.Tensor, text_out: torch.Tensor):
     speech_out, text_out = (out / torch.linalg.norm(
-        out, dim=- 1, keepdim=True
+      out, dim=- 1, keepdim=True
     ) for out in (speech_out, text_out))
     text_out = text_out / \
-        torch.linalg.norm(text_out, dim=-1, keepdim=True)
+               torch.linalg.norm(text_out, dim=-1, keepdim=True)
     if self.ot_position_weight[0] > 0.0:
       S, B, _ = speech_out.size()
       T = text_out.size()[0]
       speech_lens, text_lens = (lens.new_full(
-          (lens.size(1),),
-          lens.size(0),
-          dtype=torch.long
+        (lens.size(1),),
+        lens.size(0),
+        dtype=torch.long
       ) for lens in (speech_lens, text_lens))
       speech_lens[speech_lens <= 1] = 2
       text_lens[text_lens <= 1] = 2
       speech_pos, text_pos = (torch.matmul(
-          torch.Tensor(
-              range(dim),
-              dtype=torch.float,
-              device=speech_out.device
-          ).unsqueeze(-1),
-          torch.ones((1, B), device=speech_out.device)
+        torch.Tensor(
+          range(dim),
+          dtype=torch.float,
+          device=speech_out.device
+        ).unsqueeze(-1),
+        torch.ones((1, B), device=speech_out.device)
       ) for dim in (S, T))
       speech_pos, text_pos = (
-          pos / (lens - 1).unsqueeze(0)
-          for pos, lens in zip(
-              (speech_pos, text_pos), (speech_lens, text_lens)))
+        pos / (lens - 1).unsqueeze(0)
+        for pos, lens in zip(
+        (speech_pos, text_pos), (speech_lens, text_lens)))
       speech_pos[speech_pos > 1] = 1e9
       text_pos[text_pos > 1] = 1e9
       speech_out, text_out = (torch.cat(
-          (out, pos.unsqueeze(-1)), dim=-1)
-          for out, pos in zip((speech_out, text_out), (speech_pos, text_pos)))
+        (out, pos.unsqueeze(-1)), dim=-1)
+        for out, pos in zip((speech_out, text_out), (speech_pos, text_pos)))
     with torch.cuda.amp.autocast(enabled=False):
       loss: torch.Tensor = self.ot_loss(
-          speech_out.float().transpose(0, 1).contiguous(),
-          text_out.float().transpose(0, 1).contiguous()
+        speech_out.float().transpose(0, 1).contiguous(),
+        text_out.float().transpose(0, 1).contiguous()
       ).sum()
     return loss

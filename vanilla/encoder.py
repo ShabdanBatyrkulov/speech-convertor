@@ -32,10 +32,10 @@ class OnlineSpeechFeatureExtractor(nn.Module):
 
   def forward(self, y: torch.Tensor):
     mfcc = librosa.feature.mfcc(
-        y=y.numpy(),
-        sr=self.sample_rate,
-        n_mfcc=self.n_mfcc,
-        hop_length=self.hop_length)
+      y=y.numpy(),
+      sr=self.sample_rate,
+      n_mfcc=self.n_mfcc,
+      hop_length=self.hop_length)
     y = torch.tensor(mfcc).unsqueeze(0).detach()
     y = self.pool(self.relu(self.conv1(y)))
     y = self.pool(self.relu(self.conv2(y)))
@@ -86,8 +86,8 @@ class Encoder(nn.Module):
     self.pe = PositionalEncoder(d_model, seq_length, dropout)
     self.seq_length = seq_length
     self.layers = nn.Sequential(*(
-        EncoderBlock(d_model, d_hidden, n_heads, dropout)
-        for _ in range(n_layers)
+      EncoderBlock(d_model, d_hidden, n_heads, dropout)
+      for _ in range(n_layers)
     ))
 
   def forward(self, x: torch.Tensor):

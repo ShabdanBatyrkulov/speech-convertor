@@ -27,17 +27,17 @@ class Trainer:
     self.patience = patience
     self.details = details
     self.__dataset = lambda mode: MuSTC(
-        'must-c',
-        *dataset_config,
-        mode == 'eval'
+      'must-c',
+      *dataset_config,
+      mode == 'eval'
     )
     is_cuda = next(self.model.parameters()).is_cuda
     self.device = torch.device('cuda' if is_cuda else 'cpu')
 
   def state_dict(self):
     keys = (
-        'optimizer',
-        *(('scheduler',) if self.scheduler else ())
+      'optimizer',
+      *(('scheduler',) if self.scheduler else ())
     )
     state_dict = {k: getattr(self, k).state_dict() for k in keys}
     if hasattr(self, 'running_loss'):
@@ -73,9 +73,9 @@ class Trainer:
           l = 0
 
           swa, swa_running = self.scheduler.get('SWA') \
-              if self.scheduler else (None for _ in range(2))
-          model = swa.averaged_model if mode == 'eval'\
-              and swa and swa_running else self.model
+            if self.scheduler else (None for _ in range(2))
+          model = swa.averaged_model if mode == 'eval' \
+                                        and swa and swa_running else self.model
 
           loader = loaders[mode]
           with torch.set_grad_enabled(mode == 'train'):
@@ -89,7 +89,7 @@ class Trainer:
                 loss.backward()
                 self.optimizer.step()
               l += loss.item()
-          print(f'Average loss: {l/len(loader)} on epoch {e+1} ({mode}).')
+          print(f'Average loss: {l / len(loader)} on epoch {e + 1} ({mode}).')
           self.running_loss[mode].append(l / len(loader))
 
           if mode == 'train' and self.scheduler is not None:
@@ -99,7 +99,7 @@ class Trainer:
           elif l < best[1]:
             impatience = 0
             best = deepcopy(self.state_dict()), l
-            details = f'e={e+1}'
+            details = f'e={e + 1}'
           else:
             impatience += 1
             if impatience == self.patience:
