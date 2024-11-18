@@ -15,6 +15,7 @@ async def main():
   sample_rate = 16_000
   print(f'Sample rate: {sample_rate}')
   print("Please wait. Loading models...")
+  print("INFO: Press CTRL+C to exit.")
 
   speech2text = SpeechToTextModel(device, sample_rate)
   text2text = TextToTextModel(device)
@@ -22,15 +23,17 @@ async def main():
   record = Recorder(sample_rate)
 
   # start record/inference
-  t = await record()
+  while True:
+    t = await record()
 
-  print("Transcribing your speech...")
-  transcription, _, _ = speech2text(t)
-  print('Transcription:', transcription, end='\n\n')
+    print("\nTranscribing your speech...")
+    transcription, _, _ = speech2text(t)
+    print('Transcription:', transcription, end='\n\n')
 
-  print("Translating your speech...")
-  translation, _, _ = text2text(transcription)
-  print('Translation:', translation, end='\n\n')
+    print("Translating your speech...")
+    translation, _, _ = text2text(transcription)
+    print('Translation:', translation, end='\n\n')
+
 
 
 if __name__ == "__main__":

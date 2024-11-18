@@ -30,7 +30,7 @@ class SpeechToTextModel(SequenceToSequenceModel):
       input_features.to(self.device),
       language='english',
       task='transcribe',
-      prompt_lookup_num_tokens=10,
+      prompt_lookup_num_tokens=20,
       use_cache=True,
       do_sample=True,
       temperature=0.4,

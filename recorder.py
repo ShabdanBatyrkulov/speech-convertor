@@ -64,7 +64,6 @@ class Recorder:
 
   async def __call__(self):
     print('Starting...')
-    # self.messages.put(True)
 
     buffer = np.empty((150_000, 1), dtype='float32')
     print("LOG_INFO:", "Start recording for ~10 seconds.\nPlease say something.")
